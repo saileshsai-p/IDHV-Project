@@ -1,0 +1,606 @@
+{
+ "n": 55,
+ "missing_cells": 0,
+ "duplicates": 0,
+ "alone_plus_friends_equals_orders": 55,
+ "cronbach_alpha": 0.7567980446073937,
+ "outliers": {
+  "spend": {
+   "q1": 200.0,
+   "q3": 500.0,
+   "fence": 950.0,
+   "cap": 950,
+   "n": 3,
+   "values": [
+    1000,
+    1000,
+    3000
+   ]
+  },
+  "meals_skipped": {
+   "q1": 2.5,
+   "q3": 6.0,
+   "fence": 11.25,
+   "cap": 11,
+   "n": 2,
+   "values": [
+    15,
+    20
+   ]
+  },
+  "orders": {
+   "q1": 1.0,
+   "q3": 3.0,
+   "fence": 6.0,
+   "cap": 6,
+   "n": 2,
+   "values": [
+    7,
+    10
+   ]
+  }
+ },
+ "mess_group_counts": {
+  "Low (<2.5)": 20,
+  "Medium (2.5-3.0)": 22,
+  "High (>3.0)": 13
+ },
+ "desc": {
+  "Weekly spend (Rs)": {
+   "mean": 402.72727272727275,
+   "median": 300.0,
+   "sd": 421.2743214012146,
+   "min": 0.0,
+   "max": 3000.0,
+   "q1": 200.0,
+   "q3": 500.0
+  },
+  "Orders per week": {
+   "mean": 2.4545454545454546,
+   "median": 2.0,
+   "sd": 1.675732916690726,
+   "min": 0.0,
+   "max": 10.0,
+   "q1": 1.0,
+   "q3": 3.0
+  },
+  "Orders alone": {
+   "mean": 0.8363636363636363,
+   "median": 1.0,
+   "sd": 1.1982029192462504,
+   "min": 0.0,
+   "max": 7.0,
+   "q1": 0.0,
+   "q3": 1.0
+  },
+  "Orders with friends": {
+   "mean": 1.6181818181818182,
+   "median": 1.0,
+   "sd": 1.1137342772870198,
+   "min": 0.0,
+   "max": 7.0,
+   "q1": 1.0,
+   "q3": 2.0
+  },
+  "Spend per order (Rs)": {
+   "mean": 168.33782569631626,
+   "median": 150.0,
+   "sd": 92.36059935161462,
+   "min": 10.0,
+   "max": 500.0,
+   "q1": 120.0,
+   "q3": 200.0
+  },
+  "Meals skipped per week": {
+   "mean": 4.345454545454546,
+   "median": 3.0,
+   "sd": 3.438443779225658,
+   "min": 0.0,
+   "max": 20.0,
+   "q1": 2.5,
+   "q3": 6.0
+  },
+  "Days menu disliked (of 7)": {
+   "mean": 3.5636363636363635,
+   "median": 3.0,
+   "sd": 1.384619701279639,
+   "min": 1.0,
+   "max": 7.0,
+   "q1": 3.0,
+   "q3": 5.0
+  },
+  "Taste rating (1-5)": {
+   "mean": 2.2,
+   "median": 2.0,
+   "sd": 0.825518916489187,
+   "min": 1.0,
+   "max": 4.0,
+   "q1": 2.0,
+   "q3": 3.0
+  },
+  "Quality rating (1-5)": {
+   "mean": 2.4545454545454546,
+   "median": 2.0,
+   "sd": 0.8123623944599232,
+   "min": 1.0,
+   "max": 4.0,
+   "q1": 2.0,
+   "q3": 3.0
+  },
+  "Overall mess index (1-5)": {
+   "mean": 2.645454545454546,
+   "median": 2.6666666666666665,
+   "sd": 0.6060858580597861,
+   "min": 1.3333333333333333,
+   "max": 4.5,
+   "q1": 2.25,
+   "q3": 3.0
+  }
+ },
+ "year": {
+  "3rd year": 46,
+  "2nd year": 7,
+  "Other": 1,
+  "4th year": 1
+ },
+ "meal_mean": {
+  "Breakfast": 3.4909090909090907,
+  "Lunch": 3.0545454545454547,
+  "Snacks": 2.690909090909091,
+  "Dinner": 1.981818181818182
+ },
+ "meal_dis_n": {
+  "Breakfast": 5,
+  "Lunch": 17,
+  "Snacks": 22,
+  "Dinner": 40
+ },
+ "meal_neu_n": {
+  "Breakfast": 23,
+  "Lunch": 18,
+  "Snacks": 20,
+  "Dinner": 12
+ },
+ "meal_sat_n": {
+  "Breakfast": 27,
+  "Lunch": 20,
+  "Snacks": 13,
+  "Dinner": 3
+ },
+ "fav_meal": {
+  "Breakfast": 36,
+  "Lunch": 15,
+  "Snacks": 0,
+  "Dinner": 4
+ },
+ "taste_low_n": 36,
+ "quality_low_n": 29,
+ "taste_max": 4,
+ "quality_max": 4,
+ "skip6_n": 15,
+ "skip0_n": 3,
+ "dislike5_n": 16,
+ "menu_counts": {
+  "Often": 20,
+  "Sometimes": 16,
+  "Very Often": 13,
+  "Rarely": 6
+ },
+ "menu_often_n": 33,
+ "when": {
+  "Dinner": 51,
+  "Lunch": 3,
+  "Breakfast": 1
+ },
+ "off_hours_n": 25,
+ "skipped_flag_n": 19,
+ "orders_dist": {
+  "0": 2,
+  "1": 15,
+  "2": 14,
+  "3": 14,
+  "4": 7,
+  "5": 1,
+  "7": 1,
+  "10": 1
+ },
+ "spend500_n": 16,
+ "spend_total": 22150.0,
+ "top6_share": 0.3295711060948081,
+ "reasons_n": {
+  "dissatisfaction": 43,
+  "better_taste": 22,
+  "craving": 18,
+  "lack_of_variety": 17,
+  "friends": 10,
+  "skipped_meal": 6,
+  "convenience": 4,
+  "timing": 1,
+  "other": 1
+ },
+ "days_n": {
+  "Monday": 29,
+  "Tuesday": 22,
+  "Wednesday": 1,
+  "Thursday": 16,
+  "Friday": 20,
+  "Saturday": 26,
+  "Sunday": 2
+ },
+ "days_mentions": 116,
+ "mode_counts": {
+  "Mostly with friends": 41,
+  "Mostly alone": 9,
+  "About equally alone and with friends": 5
+ },
+ "tot_orders": 135,
+ "tot_alone": 46,
+ "tot_friends": 89,
+ "friends_gt_alone": 37,
+ "alone_gt_friends": 7,
+ "equal": 11,
+ "never_alone": 25,
+ "mode_means": {
+  "About equally alone and with friends": {
+   "orders_alone": 1.4,
+   "orders_friends": 1.4,
+   "orders": 2.8,
+   "spend_per_order": 163.33
+  },
+  "Mostly alone": {
+   "orders_alone": 1.56,
+   "orders_friends": 0.89,
+   "orders": 2.44,
+   "spend_per_order": 214.29
+  },
+  "Mostly with friends": {
+   "orders_alone": 0.61,
+   "orders_friends": 1.8,
+   "orders": 2.41,
+   "spend_per_order": 161.1
+  }
+ },
+ "mode_spend_median": {
+  "About equally alone and with friends": 400.0,
+  "Mostly alone": 400.0,
+  "Mostly with friends": 300.0
+ },
+ "other_days_avg": 22.6,
+ "nonveg_days_avg": 1.5,
+ "order_band": {
+  "0-1": {
+   "n": 17,
+   "median": 150.0,
+   "mean": 162.0
+  },
+  "2": {
+   "n": 14,
+   "median": 300.0,
+   "mean": 336.0
+  },
+  "3": {
+   "n": 14,
+   "median": 450.0,
+   "mean": 500.0
+  },
+  "4+": {
+   "n": 10,
+   "median": 500.0,
+   "mean": 770.0
+  }
+ },
+ "skip_band": {
+  "0-2": {
+   "n": 14,
+   "median": 175.0,
+   "mean": 229.0
+  },
+  "3-5": {
+   "n": 26,
+   "median": 400.0,
+   "mean": 394.0
+  },
+  "6+": {
+   "n": 15,
+   "median": 400.0,
+   "mean": 580.0
+  }
+ },
+ "menu_means": {
+  "Often": {
+   "orders": 3.2,
+   "disliked_days": 3.85,
+   "mess_index": 2.76
+  },
+  "Rarely": {
+   "orders": 1.33,
+   "disliked_days": 2.33,
+   "mess_index": 2.81
+  },
+  "Sometimes": {
+   "orders": 1.94,
+   "disliked_days": 2.81,
+   "mess_index": 2.76
+  },
+  "Very Often": {
+   "orders": 2.46,
+   "disliked_days": 4.62,
+   "mess_index": 2.26
+  }
+ },
+ "menu_n": {
+  "Often": 20,
+  "Sometimes": 16,
+  "Very Often": 13,
+  "Rarely": 6
+ },
+ "mess_group_means": {
+  "Low (<2.5)": {
+   "meals_skipped": 5.4,
+   "disliked_days": 4.2,
+   "orders": 2.65,
+   "spend": 396.0,
+   "mess_index": 2.03
+  },
+  "Medium (2.5-3.0)": {
+   "meals_skipped": 4.36,
+   "disliked_days": 3.36,
+   "orders": 2.36,
+   "spend": 453.64,
+   "mess_index": 2.75
+  },
+  "High (>3.0)": {
+   "meals_skipped": 2.69,
+   "disliked_days": 2.92,
+   "orders": 2.31,
+   "spend": 326.92,
+   "mess_index": 3.41
+  }
+ },
+ "dis_reason_orders": {
+  "0": 1.5,
+  "1": 2.72
+ },
+ "dis_reason_n": {
+  "1": 43,
+  "0": 12
+ },
+ "peer_dinner": {
+  "0": 1.84,
+  "1": 2.6
+ },
+ "ndays_orders": {
+  "1": 1.47,
+  "2": 2.04,
+  "3": 3.93,
+  "4": 3.5,
+  "5": 4.0
+ },
+ "offhours_skips": {
+  "0": 5.0,
+  "1": 3.56
+ },
+ "dinner_dis_and_dinner_order": 37,
+ "corr": {
+  "Taste": {
+   "Taste": 1.0,
+   "Quality": 0.59,
+   "Sat: Breakfast": 0.25,
+   "Sat: Lunch": 0.34,
+   "Sat: Snacks": 0.11,
+   "Sat: Dinner": 0.48,
+   "Meals skipped": -0.06,
+   "Days menu disliked": -0.24,
+   "Menu influence": -0.09,
+   "Orders / week": 0.02,
+   "Orders alone": 0.01,
+   "Orders w/ friends": -0.03,
+   "Weekly spend": 0.04
+  },
+  "Quality": {
+   "Taste": 0.59,
+   "Quality": 1.0,
+   "Sat: Breakfast": 0.31,
+   "Sat: Lunch": 0.52,
+   "Sat: Snacks": 0.38,
+   "Sat: Dinner": 0.54,
+   "Meals skipped": -0.32,
+   "Days menu disliked": -0.32,
+   "Menu influence": -0.28,
+   "Orders / week": -0.23,
+   "Orders alone": -0.09,
+   "Orders w/ friends": -0.33,
+   "Weekly spend": -0.17
+  },
+  "Sat: Breakfast": {
+   "Taste": 0.25,
+   "Quality": 0.31,
+   "Sat: Breakfast": 1.0,
+   "Sat: Lunch": 0.39,
+   "Sat: Snacks": 0.27,
+   "Sat: Dinner": 0.09,
+   "Meals skipped": -0.3,
+   "Days menu disliked": -0.08,
+   "Menu influence": 0.09,
+   "Orders / week": 0.12,
+   "Orders alone": 0.02,
+   "Orders w/ friends": 0.18,
+   "Weekly spend": 0.05
+  },
+  "Sat: Lunch": {
+   "Taste": 0.34,
+   "Quality": 0.52,
+   "Sat: Breakfast": 0.39,
+   "Sat: Lunch": 1.0,
+   "Sat: Snacks": 0.39,
+   "Sat: Dinner": 0.2,
+   "Meals skipped": -0.22,
+   "Days menu disliked": -0.33,
+   "Menu influence": -0.18,
+   "Orders / week": -0.22,
+   "Orders alone": -0.07,
+   "Orders w/ friends": -0.28,
+   "Weekly spend": -0.25
+  },
+  "Sat: Snacks": {
+   "Taste": 0.11,
+   "Quality": 0.38,
+   "Sat: Breakfast": 0.27,
+   "Sat: Lunch": 0.39,
+   "Sat: Snacks": 1.0,
+   "Sat: Dinner": 0.15,
+   "Meals skipped": -0.3,
+   "Days menu disliked": -0.07,
+   "Menu influence": -0.32,
+   "Orders / week": -0.34,
+   "Orders alone": -0.2,
+   "Orders w/ friends": -0.19,
+   "Weekly spend": -0.17
+  },
+  "Sat: Dinner": {
+   "Taste": 0.48,
+   "Quality": 0.54,
+   "Sat: Breakfast": 0.09,
+   "Sat: Lunch": 0.2,
+   "Sat: Snacks": 0.15,
+   "Sat: Dinner": 1.0,
+   "Meals skipped": -0.18,
+   "Days menu disliked": -0.29,
+   "Menu influence": -0.24,
+   "Orders / week": -0.11,
+   "Orders alone": -0.1,
+   "Orders w/ friends": -0.14,
+   "Weekly spend": -0.09
+  },
+  "Meals skipped": {
+   "Taste": -0.06,
+   "Quality": -0.32,
+   "Sat: Breakfast": -0.3,
+   "Sat: Lunch": -0.22,
+   "Sat: Snacks": -0.3,
+   "Sat: Dinner": -0.18,
+   "Meals skipped": 1.0,
+   "Days menu disliked": 0.34,
+   "Menu influence": 0.24,
+   "Orders / week": 0.23,
+   "Orders alone": -0.01,
+   "Orders w/ friends": 0.32,
+   "Weekly spend": 0.36
+  },
+  "Days menu disliked": {
+   "Taste": -0.24,
+   "Quality": -0.32,
+   "Sat: Breakfast": -0.08,
+   "Sat: Lunch": -0.33,
+   "Sat: Snacks": -0.07,
+   "Sat: Dinner": -0.29,
+   "Meals skipped": 0.34,
+   "Days menu disliked": 1.0,
+   "Menu influence": 0.58,
+   "Orders / week": 0.2,
+   "Orders alone": 0.03,
+   "Orders w/ friends": 0.27,
+   "Weekly spend": 0.06
+  },
+  "Menu influence": {
+   "Taste": -0.09,
+   "Quality": -0.28,
+   "Sat: Breakfast": 0.09,
+   "Sat: Lunch": -0.18,
+   "Sat: Snacks": -0.32,
+   "Sat: Dinner": -0.24,
+   "Meals skipped": 0.24,
+   "Days menu disliked": 0.58,
+   "Menu influence": 1.0,
+   "Orders / week": 0.32,
+   "Orders alone": 0.22,
+   "Orders w/ friends": 0.28,
+   "Weekly spend": 0.22
+  },
+  "Orders / week": {
+   "Taste": 0.02,
+   "Quality": -0.23,
+   "Sat: Breakfast": 0.12,
+   "Sat: Lunch": -0.22,
+   "Sat: Snacks": -0.34,
+   "Sat: Dinner": -0.11,
+   "Meals skipped": 0.23,
+   "Days menu disliked": 0.2,
+   "Menu influence": 0.32,
+   "Orders / week": 1.0,
+   "Orders alone": 0.68,
+   "Orders w/ friends": 0.74,
+   "Weekly spend": 0.79
+  },
+  "Orders alone": {
+   "Taste": 0.01,
+   "Quality": -0.09,
+   "Sat: Breakfast": 0.02,
+   "Sat: Lunch": -0.07,
+   "Sat: Snacks": -0.2,
+   "Sat: Dinner": -0.1,
+   "Meals skipped": -0.01,
+   "Days menu disliked": 0.03,
+   "Menu influence": 0.22,
+   "Orders / week": 0.68,
+   "Orders alone": 1.0,
+   "Orders w/ friends": 0.1,
+   "Weekly spend": 0.47
+  },
+  "Orders w/ friends": {
+   "Taste": -0.03,
+   "Quality": -0.33,
+   "Sat: Breakfast": 0.18,
+   "Sat: Lunch": -0.28,
+   "Sat: Snacks": -0.19,
+   "Sat: Dinner": -0.14,
+   "Meals skipped": 0.32,
+   "Days menu disliked": 0.27,
+   "Menu influence": 0.28,
+   "Orders / week": 0.74,
+   "Orders alone": 0.1,
+   "Orders w/ friends": 1.0,
+   "Weekly spend": 0.66
+  },
+  "Weekly spend": {
+   "Taste": 0.04,
+   "Quality": -0.17,
+   "Sat: Breakfast": 0.05,
+   "Sat: Lunch": -0.25,
+   "Sat: Snacks": -0.17,
+   "Sat: Dinner": -0.09,
+   "Meals skipped": 0.36,
+   "Days menu disliked": 0.06,
+   "Menu influence": 0.22,
+   "Orders / week": 0.79,
+   "Orders alone": 0.47,
+   "Orders w/ friends": 0.66,
+   "Weekly spend": 1.0
+  }
+ },
+ "pearson_orders_spend_capped": 0.6943691703348894,
+ "pearson_skips_spend_capped": 0.43118020021132053,
+ "slope_orders_spend": 119.79742173112342,
+ "r_orders_friends_spend": 0.6048776807717267,
+ "r_orders_alone_spend": 0.32282654638971026,
+ "profile": {
+  "Low (<2.5)": {
+   "norm_meals_skipped_capped": 0.45,
+   "norm_disliked_days": 0.533,
+   "norm_orders_capped": 0.442,
+   "norm_spend_capped": 0.414
+  },
+  "Medium (2.5-3.0)": {
+   "norm_meals_skipped_capped": 0.38,
+   "norm_disliked_days": 0.394,
+   "norm_orders_capped": 0.386,
+   "norm_spend_capped": 0.377
+  },
+  "High (>3.0)": {
+   "norm_meals_skipped_capped": 0.245,
+   "norm_disliked_days": 0.321,
+   "norm_orders_capped": 0.333,
+   "norm_spend_capped": 0.344
+  }
+ }
+}

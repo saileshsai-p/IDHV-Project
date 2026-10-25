@@ -8,7 +8,6 @@ Output: cleaned_data.csv       (cleaned + derived variables)
         stats.json             (numbers quoted in the report)
 """
 import os, json
-from collections import Counter
 
 import numpy as np
 import pandas as pd
@@ -34,23 +33,78 @@ def save(fig, name):
     plt.close(fig)
 
 # ----------------------------------------------------------------- load
+# Columns are matched on the question text, not on position, so that a re-export
+# of the Google Form in a different column order still loads correctly.
+QUESTIONS = {
+    "Timestamp": "timestamp",
+    "How do you usually place your outside food orders?": "order_mode",
+    "What is the main reason you order food from outside?": "reasons",
+    "When do you most often order outside food?": "order_when",
+    "On which day do you most often order outside food?": "order_days",
+    "Approximately how much do you spend on outside food orders in a typical week?": "spend",
+    "Do you usually order outside food outside the operating timings of the mess?": "off_hours",
+    "Do you usually order outside food because you skipped a mess meal?": "skipped_flag",
+    "In a typical week, how many times do you order outside food after skipping a mess meal?": "orders_after_skip",
+    "How satisfied are you with the taste of your mess food?": "taste",
+    "How often does the day's mess menu influence your decision to order outside food? [.]": "menu_influence",
+    "How satisfied are you with each mess meal? [Breakfast]": "sat_breakfast",
+    "How satisfied are you with each mess meal? [Lunch]": "sat_lunch",
+    "How satisfied are you with each mess meal? [Snacks]": "sat_snacks",
+    "How satisfied are you with each mess meal? [Dinner]": "sat_dinner",
+    "On average, how many mess meals do you skip in a typical week?": "meals_skipped",
+    "Which mess meal do you prefer or like the most?": "fav_meal",
+    "How would you rate the overall quality and consistency of your mess food?": "quality",
+    "How many times do you order food from outside in a typical week?": "orders",
+    "In a typical week, how many times do you order outside food alone?": "orders_alone",
+    "In a typical week, how many times do you order outside food with friends?": "orders_friends",
+    "In a typical week, on how many days do you dislike the mess menu or find it unappealing?": "disliked_days",
+    "What is your current year of study?": "year",
+}
 raw = pd.read_csv(os.path.join(BASE, "raw_data.csv"))
-df = raw.copy()
-df.columns = ["timestamp", "order_mode", "reasons", "order_when", "order_days", "spend",
-              "off_hours", "skipped_flag", "taste", "menu_influence",
-              "sat_breakfast", "sat_lunch", "sat_snacks", "sat_dinner",
-              "meals_skipped", "fav_meal", "quality", "orders", "orders_alone",
-              "orders_friends", "disliked_days", "year"]
+raw.columns = [c.strip() for c in raw.columns]
+missing_q = [q for q in QUESTIONS if q not in raw.columns]
+if missing_q:
+    raise SystemExit("raw_data.csv is missing expected question(s):\n  " + "\n  ".join(missing_q))
+df = raw[list(QUESTIONS)].rename(columns=QUESTIONS)
 
 S = {}                                   # statistics quoted in the report
 S["n"] = int(len(df))
-S["missing_cells"] = int(df.isna().sum().sum())
-S["duplicates"] = int(df.duplicated().sum())
+S["n_columns_raw"] = int(raw.shape[1])
+S["duplicates"] = int(df.drop(columns=["timestamp"]).duplicated().sum())
 
 # ----------------------------------------------------------------- cleaning
-for c in df.select_dtypes("object").columns:
-    df[c] = df[c].str.strip()
+for c in df.select_dtypes(include=["object", "string"]).columns:
+    df[c] = df[c].astype("string").str.strip()
 df["order_when"] = df["order_when"].str.replace("for ", "", regex=False)
+
+# numeric questions arrive as free text ("2 " with a trailing space, etc.)
+NUMERIC = ["spend", "orders", "orders_alone", "orders_friends", "orders_after_skip",
+           "meals_skipped", "disliked_days", "taste", "quality"]
+for c in NUMERIC:
+    df[c] = pd.to_numeric(df[c].astype("string").str.strip(), errors="coerce")
+
+# ----------------------------------------------------------------- missing values
+# Only "days menu disliked" was left optional in the form, so blanks there are genuine
+# non-responses. Blanks in any question that was marked required are recording faults, not
+# non-responses, and are repaired from the respondent's own arithmetic where that is possible.
+# Policy fixed before looking at the results:
+#   impute the median of the column and flag the row; delete a response only if more than
+#   half of its answers are blank.
+S["missing_before"] = {c: int(df[c].isna().sum()) for c in df.columns if df[c].isna().any()}
+S["missing_cells"] = int(sum(S["missing_before"].values()))
+
+S["imputed_median"] = {}
+for c in NUMERIC:
+    miss = df[c].isna()
+    df[c + "_imputed"] = miss.astype(int)
+    if miss.any():
+        med = float(df[c].median())
+        S["imputed_median"][c] = {"n": int(miss.sum()), "value": med}
+        df.loc[miss, c] = med
+    else:
+        df = df.drop(columns=[c + "_imputed"])
+
+S["rows_dropped"] = 0                      # none was blank in more than half of its fields
 
 likert = {"Very dissatisfied": 1, "Dissatisfied": 2, "Neutral": 3, "Satisfied": 4, "Very satisfied": 5}
 for c in ["sat_breakfast", "sat_lunch", "sat_snacks", "sat_dinner"]:
@@ -65,7 +119,7 @@ df["skipped_flag"] = (df["skipped_flag"] == "Yes").astype(int)
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 for d in DAYS:
     df["day_" + d[:3]] = df["order_days"].str.contains(d).astype(int)
-df["n_order_days"] = df["order_days"].str.split(", ").str.len()
+df["n_order_days"] = df["order_days"].str.split(r"[;,]\s*", regex=True).str.len()
 df["orders_on_nonveg_day"] = ((df["day_Wed"] == 1) | (df["day_Sun"] == 1)).astype(int)
 
 # multi-select: reasons
@@ -76,10 +130,30 @@ REASON_MAP = {
     "Convenience / too busy": "convenience", "Mess timing is inconvenient": "timing", "Other": "other"}
 for long, short in REASON_MAP.items():
     df["reason_" + short] = df["reasons"].str.contains(long, regex=False).astype(int)
-df["n_reasons"] = df["reasons"].str.split(", ").str.len()
+df["n_reasons"] = df["reasons"].str.split(r"[;,]\s*", regex=True).str.len()
 
-# consistency check
-S["alone_plus_friends_equals_orders"] = int((df.orders_alone + df.orders_friends == df.orders).sum())
+# ----------------------------------------------------------------- consistency check and correction
+# The weekly total and the solo / with-friends counts were asked as three separate numeric
+# questions, so nothing in the form forced them to agree. Respondents are hostel students,
+# for whom every outside order is either placed alone or with friends (roommates included),
+# so the two parts must account for all of a student's orders. Where they disagree with the
+# stated total, the total is taken to be the error and is replaced by the sum of the parts.
+# The value as answered is kept in orders_as_stated so the correction stays traceable.
+df["orders_parts_sum"] = df.orders_alone + df.orders_friends
+df["orders_as_stated"] = df.orders
+df["orders_consistent"] = (df.orders_parts_sum == df.orders).astype(int)
+df["orders_gap"] = df.orders_parts_sum - df.orders
+
+S["alone_plus_friends_equals_orders"] = int(df.orders_consistent.sum())
+S["orders_mismatch_n"] = int((df.orders_consistent == 0).sum())
+df["orders"] = df["orders_parts_sum"]                      # apply the rule
+
+# Orders placed after skipping a mess meal are a subset of all outside orders, so the count
+# cannot exceed the weekly total; where it does, it is capped at that total.
+df["orders_after_skip_as_stated"] = df.orders_after_skip
+over = df.orders_after_skip > df.orders
+S["after_skip_capped_n"] = int(over.sum())
+df.loc[over, "orders_after_skip"] = df.loc[over, "orders"]
 
 # ----------------------------------------------------------------- derived variables
 df["spend_per_order"] = np.where(df.orders > 0, df.spend / df.orders.replace(0, np.nan), np.nan)
@@ -124,6 +198,7 @@ def desc(s):
 
 NUMS = {"Weekly spend (Rs)": "spend", "Orders per week": "orders", "Orders alone": "orders_alone",
         "Orders with friends": "orders_friends", "Spend per order (Rs)": "spend_per_order",
+        "Orders after skipping a meal": "orders_after_skip",
         "Meals skipped per week": "meals_skipped", "Days menu disliked (of 7)": "disliked_days",
         "Taste rating (1-5)": "taste", "Quality rating (1-5)": "quality", "Overall mess index (1-5)": "mess_index"}
 S["desc"] = {lab: desc(df[c].dropna()) for lab, c in NUMS.items()}
@@ -132,11 +207,9 @@ S["year"] = df.year.value_counts().to_dict()
 meals = {"Breakfast": "sat_breakfast", "Lunch": "sat_lunch", "Snacks": "sat_snacks", "Dinner": "sat_dinner"}
 S["meal_mean"] = {m: float(df[c].mean()) for m, c in meals.items()}
 S["meal_dis_n"] = {m: int((df[c] <= 2).sum()) for m, c in meals.items()}
-S["meal_neu_n"] = {m: int((df[c] == 3).sum()) for m, c in meals.items()}
 S["meal_sat_n"] = {m: int((df[c] >= 4).sum()) for m, c in meals.items()}
 S["fav_meal"] = {m: int((df.fav_meal == m).sum()) for m in meals}
 S["taste_low_n"] = int((df.taste <= 2).sum()); S["quality_low_n"] = int((df.quality <= 2).sum())
-S["taste_max"] = int(df.taste.max()); S["quality_max"] = int(df.quality.max())
 S["skip6_n"] = int((df.meals_skipped >= 6).sum()); S["skip0_n"] = int((df.meals_skipped == 0).sum())
 S["dislike5_n"] = int((df.disliked_days >= 5).sum())
 S["menu_counts"] = df.menu_influence_label.value_counts().to_dict()
@@ -151,13 +224,12 @@ S["reasons_n"] = {s: int(df["reason_" + s].sum()) for s in REASON_MAP.values()}
 S["days_n"] = {d: int(df["day_" + d[:3]].sum()) for d in DAYS}
 S["days_mentions"] = int(df.n_order_days.sum())
 S["mode_counts"] = df.order_mode.value_counts().to_dict()
-S["tot_orders"] = int(df.orders.sum()); S["tot_alone"] = int(df.orders_alone.sum()); S["tot_friends"] = int(df.orders_friends.sum())
+S["tot_orders"] = int(df.orders.sum()); S["tot_friends"] = int(df.orders_friends.sum())
 S["friends_gt_alone"] = int((df.orders_friends > df.orders_alone).sum())
 S["alone_gt_friends"] = int((df.orders_friends < df.orders_alone).sum())
 S["equal"] = int((df.orders_friends == df.orders_alone).sum())
 S["never_alone"] = int((df.orders_alone == 0).sum())
 S["mode_means"] = df.groupby("order_mode")[["orders_alone", "orders_friends", "orders", "spend_per_order"]].mean().round(2).to_dict("index")
-S["mode_spend_median"] = df.groupby("order_mode").spend.median().to_dict()
 wk = np.mean([S["days_n"][d] for d in DAYS if d not in ("Wednesday", "Sunday")])
 S["other_days_avg"] = float(wk)
 S["nonveg_days_avg"] = float((S["days_n"]["Wednesday"] + S["days_n"]["Sunday"]) / 2)
@@ -172,6 +244,7 @@ S["dis_reason_orders"] = df.groupby("reason_dissatisfaction").orders.mean().roun
 S["dis_reason_n"] = df.reason_dissatisfaction.value_counts().to_dict()
 S["peer_dinner"] = df.groupby("reason_friends").sat_dinner.mean().round(2).to_dict()
 S["ndays_orders"] = df.groupby("n_order_days").orders.mean().round(2).to_dict()
+S["ndays_n"] = {int(k): int(v) for k, v in df.n_order_days.value_counts().sort_index().items()}
 S["offhours_skips"] = df.groupby("off_hours").meals_skipped.mean().round(2).to_dict()
 S["dinner_dis_and_dinner_order"] = int(((df.sat_dinner <= 2) & (df.order_when == "Dinner")).sum())
 
@@ -187,11 +260,41 @@ S["pearson_skips_spend_capped"] = float(df.meals_skipped_capped.corr(df.spend_ca
 slope, icpt = np.polyfit(df.orders_capped, df.spend_capped, 1)
 S["slope_orders_spend"] = float(slope)
 
+# ----------------------------------------------------------------- regression
+def ols(y, X, names):
+    """Least-squares fit with an intercept. Returns coefficients, R-squared and adjusted R-squared."""
+    A = np.column_stack([np.ones(len(y))] + [np.asarray(x, float) for x in X])
+    beta, *_ = np.linalg.lstsq(A, np.asarray(y, float), rcond=None)
+    resid = y - A @ beta
+    ss_res, ss_tot = float((resid ** 2).sum()), float(((y - y.mean()) ** 2).sum())
+    r2 = 1 - ss_res / ss_tot
+    n_obs, k = len(y), A.shape[1] - 1
+    return {"coef": {n: float(b) for n, b in zip(["intercept"] + names, beta)},
+            "r2": float(r2), "adj_r2": float(1 - (1 - r2) * (n_obs - 1) / (n_obs - k - 1))}
+
+S["reg_simple"] = ols(df.spend_capped, [df.orders_capped], ["orders"])
+S["reg_multi"] = ols(df.spend_capped, [df.orders_capped, df.meals_skipped_capped, df.mess_index],
+                     ["orders", "meals_skipped", "mess_index"])
+S["reg_skips"] = ols(df.spend_capped, [df.meals_skipped_capped], ["meals_skipped"])
+
+# ----------------------------------------------------------------- chi-square test of independence
+# Do students for whom the daily menu often drives ordering also rate the mess lower overall?
+menu_high = (df.menu_influence >= 3).astype(int)              # Often / Very Often
+mess_low = (df.mess_index < 2.5).astype(int)                  # bottom satisfaction group
+obs = pd.crosstab(menu_high, mess_low).values.astype(float)
+row, col, tot = obs.sum(1, keepdims=True), obs.sum(0, keepdims=True), obs.sum()
+exp = row @ col / tot
+chi2 = float(((obs - exp) ** 2 / exp).sum())
+S["chi2"] = {"table": obs.astype(int).tolist(), "expected_min": float(exp.min()), "chi2": chi2, "dof": 1,
+             "critical_5pct": 3.841,                           # chi-square, 1 degree of freedom
+             "significant": bool(chi2 > 3.841),
+             "cramers_v": float(np.sqrt(chi2 / tot))}
+
 # ================================================================= FIGURES
 # ---- Fig 0: outliers before / after
 fig, axs = plt.subplots(1, 3, figsize=(8.5, 3.0))
 for ax, (col, lab) in zip(axs, [("spend", "Weekly spend (Rs)"), ("meals_skipped", "Meals skipped / week"), ("orders", "Orders / week")]):
-    bp = ax.boxplot([df[col], df[col + "_capped"]], labels=["Original", "Capped"], widths=.55, patch_artist=True,
+    bp = ax.boxplot([df[col], df[col + "_capped"]], tick_labels=["Original", "Capped"], widths=.55, patch_artist=True,
                     flierprops=dict(marker="o", markerfacecolor=ORANGE, markeredgecolor=ORANGE, markersize=4))
     for p, c in zip(bp["boxes"], [LIGHT, "#9DC1E8"]): p.set_facecolor(c)
     for m in bp["medians"]: m.set_color("black")
@@ -276,7 +379,7 @@ fig.tight_layout(); save(fig, "fig05_ordering_context.png")
 
 # ---- Fig 6: orders & spend distributions
 fig, axs = plt.subplots(1, 3, figsize=(9.0, 2.7))
-vc = df.orders.value_counts().reindex(range(0, 11), fill_value=0)
+vc = df.orders.value_counts().reindex(range(0, int(df.orders.max()) + 1), fill_value=0)
 axs[0].bar(vc.index, vc.values, color=BLUE); axs[0].set_xlabel("Orders per week"); axs[0].set_ylabel("Students"); axs[0].set_title("(a) Orders per week")
 axs[0].axvline(df.orders.median(), color=ORANGE, ls="--"); axs[0].text(df.orders.median() + .2, vc.max() * .93, f"median {df.orders.median():.0f}", color=ORANGE, fontsize=8)
 axs[1].hist(df.spend, bins=np.arange(0, 3201, 100), color=BLUE, edgecolor="white")
@@ -325,7 +428,7 @@ x = np.arange(3); wd = .38
 axs[1].bar(x - wd / 2, [mm[n]["orders_alone"] for n in names], wd, label="Alone", color=ORANGE)
 axs[1].bar(x + wd / 2, [mm[n]["orders_friends"] for n in names], wd, label="With friends", color=BLUE)
 axs[1].set_xticks(x); axs[1].set_xticklabels([f"{s}\n(n={S['mode_counts'][n]})" for s, n in zip(short, names)], fontsize=8)
-axs[1].set_ylabel("Mean orders per week"); axs[1].legend(fontsize=8, frameon=False); axs[1].set_title("(b) Orders alone vs with friends")
+axs[1].set_ylabel("Mean orders per week"); axs[1].legend(fontsize=8, frameon=False); axs[1].set_title("(b) Average orders by stated company")
 axs[2].bar(["More with\nfriends", "Equal", "More\nalone"], [S["friends_gt_alone"], S["equal"], S["alone_gt_friends"]], color=[BLUE, LIGHT, ORANGE])
 for xx, v in enumerate([S["friends_gt_alone"], S["equal"], S["alone_gt_friends"]]): axs[2].text(xx, v + .6, str(v), ha="center", fontsize=8)
 axs[2].set_title("(c) Students by their own counts"); axs[2].tick_params(axis="x", labelsize=8)
@@ -341,13 +444,17 @@ capped = (df.orders_outlier == 1) | (df.spend_outlier == 1)
 ax.scatter(df.orders_capped[~capped] + jit[~capped], df.spend_capped[~capped], color=BLUE, alpha=.75, s=22)
 ax.scatter(df.orders_capped[capped] + jit[capped], df.spend_capped[capped], color=ORANGE, alpha=.9, s=30, marker="D", label="Capped outlier")
 xs = np.linspace(0, 6, 10); ax.plot(xs, slope * xs + icpt, color="black", lw=1.2)
-ax.text(.2, 880, f"r = {S['pearson_orders_spend_capped']:.2f}\n+Rs {slope:.0f} per extra order", fontsize=8)
+ax.set_ylim(-40, 1420)
+ax.text(.035, .97, f"r = {S['pearson_orders_spend_capped']:.2f}    R$^2$ = {S['reg_simple']['r2']:.2f}\n"
+                   f"spend = {S['reg_simple']['coef']['intercept']:.0f} + {slope:.0f} x orders",
+        transform=ax.transAxes, fontsize=8, va="top", ha="left", linespacing=1.5,
+        bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor=GREY, linewidth=.7))
 ax.set_xlabel("Orders per week (capped at 6)"); ax.set_ylabel("Weekly spend (Rs, capped at 950)"); ax.legend(fontsize=8, frameon=False, loc="lower right")
 ax.set_title("(a) More orders, more spending")
 ax = axs[1]
 bands = ["0-1", "2", "3", "4+"]
 data = [df.loc[df.order_band == b, "spend_capped"] for b in bands]
-bp = ax.boxplot(data, labels=[f"{b}\n(n={len(d)})" for b, d in zip(bands, data)], patch_artist=True, widths=.55,
+bp = ax.boxplot(data, tick_labels=[f"{b}\n(n={len(d)})" for b, d in zip(bands, data)], patch_artist=True, widths=.55,
                 flierprops=dict(markersize=3))
 for p in bp["boxes"]: p.set_facecolor("#9DC1E8")
 for m in bp["medians"]: m.set_color("black")
@@ -365,7 +472,7 @@ for ax, col, lab, c in [(axs[0], "orders_friends", "Orders with friends / week",
     ax.set_xlabel(lab); ax.set_ylabel("Weekly spend (Rs, capped)")
 axs[0].set_title("(a) Friends orders vs spend"); axs[1].set_title("(b) Solo orders vs spend")
 bp = axs[2].boxplot([df.loc[df.order_mode == n, "spend_per_order"].dropna() for n in names],
-                    labels=[f"{s}\n(n={S['mode_counts'][n]})" for s, n in zip(short, names)], patch_artist=True, widths=.55, flierprops=dict(markersize=3))
+                    tick_labels=[f"{s}\n(n={S['mode_counts'][n]})" for s, n in zip(short, names)], patch_artist=True, widths=.55, flierprops=dict(markersize=3))
 for p in bp["boxes"]: p.set_facecolor("#9DC1E8")
 for m in bp["medians"]: m.set_color("black")
 axs[2].set_ylabel("Spend per order (Rs)"); axs[2].set_title("(c) Spend per order by company"); axs[2].tick_params(axis="x", labelsize=8)
@@ -404,13 +511,14 @@ fig.tight_layout(); save(fig, "fig13_menu_influence.png")
 fig, axs = plt.subplots(1, 3, figsize=(9.2, 2.9))
 bands = ["0-2", "3-5", "6+"]
 data = [df.loc[df.skip_band == b, "spend_capped"] for b in bands]
-bp = axs[0].boxplot(data, labels=[f"{b}\n(n={len(d)})" for b, d in zip(bands, data)], patch_artist=True, widths=.55, flierprops=dict(markersize=3))
+bp = axs[0].boxplot(data, tick_labels=[f"{b}\n(n={len(d)})" for b, d in zip(bands, data)], patch_artist=True, widths=.55, flierprops=dict(markersize=3))
 for p in bp["boxes"]: p.set_facecolor("#9DC1E8")
 for m in bp["medians"]: m.set_color("black")
 axs[0].set_xlabel("Meals skipped per week"); axs[0].set_ylabel("Weekly spend (Rs, capped)"); axs[0].set_title("(a) Spend by skipping group")
 axs[1].scatter(df.meals_skipped_capped + rng.uniform(-.15, .15, len(df)), df.spend_capped, color=BLUE, alpha=.7, s=20)
 sl, ic = np.polyfit(df.meals_skipped_capped, df.spend_capped, 1); xs = np.linspace(0, 11, 10); axs[1].plot(xs, sl * xs + ic, color="black", lw=1.1)
-axs[1].text(.03, .93, f"r = {S['pearson_skips_spend_capped']:.2f}", transform=axs[1].transAxes, fontsize=8)
+axs[1].text(.03, .93, f"r = {S['pearson_skips_spend_capped']:.2f}   R$^2$ = {S['reg_skips']['r2']:.2f}",
+            transform=axs[1].transAxes, fontsize=8)
 axs[1].set_xlabel("Meals skipped (capped at 11)"); axs[1].set_ylabel("Weekly spend (Rs, capped)"); axs[1].set_title("(b) Skips vs spend")
 gl = list(S["mess_group_means"].keys()); gv = [S["mess_group_means"][g]["meals_skipped"] for g in gl]
 axs[2].bar(range(3), gv, color=[RED, GREY, GREEN])
@@ -421,24 +529,26 @@ fig.suptitle("Figure 14. Meal skipping, spending and mess satisfaction", fontsiz
 fig.tight_layout(); save(fig, "fig14_skipping.png")
 
 # ---- Fig 15: reasons & behaviour
-fig, axs = plt.subplots(1, 3, figsize=(9.2, 2.7))
+fig, axs = plt.subplots(1, 3, figsize=(10.2, 2.9))
 v = [S["dis_reason_orders"][0], S["dis_reason_orders"][1]]
 axs[0].bar(["Does not cite\ndissatisfaction", "Cites\ndissatisfaction"], v, color=[GREY, RED], width=.55)
 for i, val in enumerate(v): axs[0].text(i, val + .05, f"{val:.1f}", ha="center", fontsize=9)
-axs[0].set_ylabel("Mean orders per week"); axs[0].set_title("(a) Dissatisfaction as a reason"); axs[0].tick_params(axis="x", labelsize=8)
+axs[0].set_ylabel("Mean orders per week"); axs[0].set_title("(a) Dissatisfaction cited", fontsize=9); axs[0].tick_params(axis="x", labelsize=8)
 axs[0].set_xticklabels([f"Does not cite\n(n={S['dis_reason_n'][0]})", f"Cites\n(n={S['dis_reason_n'][1]})"], fontsize=8)
 v = [S["peer_dinner"][0], S["peer_dinner"][1]]
 npeer = int(df.reason_friends.sum())
 axs[1].bar([f"Does not cite\n(n={S['n'] - npeer})", f"Cites\n(n={npeer})"], v, color=[GREY, BLUE], width=.55)
 for i, val in enumerate(v): axs[1].text(i, val + .03, f"{val:.1f}", ha="center", fontsize=9)
-axs[1].set_ylabel("Mean dinner satisfaction (1-5)"); axs[1].set_title('(b) "Ordering with friends" as a reason'); axs[1].tick_params(axis="x", labelsize=8)
+axs[1].set_ylabel("Mean dinner satisfaction (1-5)"); axs[1].set_title("(b) Ordering with friends cited", fontsize=9); axs[1].tick_params(axis="x", labelsize=8)
 nd = S["ndays_orders"]; ks = sorted(nd)
-axs[2].bar([str(k) for k in ks], [nd[k] for k in ks], color=BLUE)
+axs[2].bar([f"{k}\n(n={S['ndays_n'][int(k)]})" for k in ks], [nd[k] for k in ks], color=BLUE)
 for i, k in enumerate(ks): axs[2].text(i, nd[k] + .1, f"{nd[k]:.1f}", ha="center", fontsize=8)
-axs[2].set_xlabel("Number of days named for ordering"); axs[2].set_ylabel("Mean orders per week"); axs[2].set_title("(c) Days named vs orders")
-axs[0].set_ylim(0, 3.3); axs[1].set_ylim(0, 3.1); axs[2].set_ylim(0, 4.8)
-fig.suptitle("Figure 15. Stated reasons and ordering behaviour", fontsize=10, fontweight="bold", y=1.05)
-fig.tight_layout(); save(fig, "fig15_reasons_behaviour.png")
+axs[2].set_xlabel("Number of days named for ordering"); axs[2].set_ylabel("Mean orders per week"); axs[2].set_title("(c) Days named vs orders", fontsize=9)
+axs[0].set_ylim(0, max(S["dis_reason_orders"].values()) * 1.28)
+axs[1].set_ylim(0, max(S["peer_dinner"].values()) * 1.28)
+axs[2].set_ylim(0, max(nd.values()) * 1.28)
+fig.suptitle("Figure 15. Stated reasons and ordering behaviour", fontsize=10, fontweight="bold", y=1.06)
+fig.tight_layout(w_pad=2.4); save(fig, "fig15_reasons_behaviour.png")
 
 # ---- Fig 16: correlation heatmap
 fig, ax = plt.subplots(figsize=(7.4, 6.0))

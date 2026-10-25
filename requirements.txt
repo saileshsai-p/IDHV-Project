@@ -1,0 +1,8 @@
+# IDHV 2026M Project - analysis dependencies
+# Install with:  pip install -r requirements.txt
+#
+# matplotlib must be 3.9 or newer: the boxplot tick_labels argument used in
+# 01_preprocess_and_eda.py replaced the older "labels" argument in that release.
+pandas>=1.4
+numpy>=1.22
+matplotlib>=3.9
